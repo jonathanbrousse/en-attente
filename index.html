@@ -3,94 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Compétences 3D</title>
+    <title>Mon Réseau de Compétences 3D</title>
     <style>
-        body { margin: 0; background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); overflow: hidden; font-family: sans-serif; }
-        #title { position: absolute; top: 20px; left: 20px; color: #00d4ff; z-index: 10; pointer-events: none; }
-        #title h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
-    </style>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
-            "three-spritetext": "https://unpkg.com/three-spritetext@1.8.2/dist/three-spritetext.mjs",
-            "3d-force-graph": "https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.mjs"
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        #title { 
+            position: absolute; top: 20px; left: 20px; color: #00d4ff; 
+            z-index: 10; pointer-events: none; 
         }
-    }
-    </script>
+        #title h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
+    </style>
 </head>
 <body>
 
     <div id="title">
-        <h1>Navigation Compétences</h1>
-        <small style="color: #888;">Pincez pour zoomer • Touchez pour déplacer</small>
+        <h1>Compétences Industrielles</h1>
+        <small style="color: #666;">Cliquez sur un mot pour zoomer</small>
     </div>
     <div id="3d-graph"></div>
 
     <script type="module">
-        import ForceGraph3D from '3d-force-graph';
-        import SpriteText from 'three-spritetext';
+        // On importe tout via esm.sh qui gère les dépendances (comme DragControls) tout seul
+        import ForceGraph3D from 'https://esm.sh/3d-force-graph';
+        import SpriteText from 'https://esm.sh/three-spritetext';
 
         const gData = {
             nodes: [
-                { id: "MOI", group: 0, level: 1 },
-                // Groupe 1 : Industriel
-                { id: "Compétences Techniques", group: 1, level: 2 },
-                { id: "Amélioration continue", group: 1 }, { id: "Transfert industriel", group: 1 },
-                { id: "Gestion de projet industriel", group: 1 }, { id: "Industrialisation", group: 1 },
-                { id: "Méthodes / procédés", group: 1 }, { id: "Management d’équipe", group: 1 },
-                { id: "Lean", group: 1 }, { id: "5S", group: 1 }, { id: "Kaizen", group: 1 },
-                { id: "VSM", group: 1 }, { id: "AMDEC", group: 1 }, { id: "SAP", group: 1 },
-                { id: "Excel", group: 1 }, { id: "Power BI", group: 1 }, { id: "MS Project", group: 1 },
-                // Groupe 2 : Soft Skills
-                { id: "Soft Skills", group: 2, level: 2 },
+                { id: "PROFIL", group: 0, size: 10 },
+                // Catégories
+                { id: "Techniques", group: 1, size: 8 },
+                { id: "Soft Skills", group: 2, size: 8 },
+                { id: "Intérêts", group: 3, size: 8 },
+                // Compétences Techniques
+                { id: "Amélioration continue", group: 1 }, { id: "Lean", group: 1 },
+                { id: "5S", group: 1 }, { id: "Kaizen", group: 1 }, { id: "VSM", group: 1 },
+                { id: "Transfert industriel", group: 1 }, { id: "Gestion de projet", group: 1 },
+                { id: "Industrialisation", group: 1 }, { id: "Méthodes / procédés", group: 1 },
+                { id: "Management d’équipe", group: 1 }, { id: "AMDEC", group: 1 },
+                { id: "SAP", group: 1 }, { id: "Excel", group: 1 }, { id: "Power BI", group: 1 },
+                { id: "MS Project", group: 1 },
+                // Soft Skills
                 { id: "Résolution de problèmes", group: 2 }, { id: "Intelligence émotionnelle", group: 2 },
-                { id: "Créativité", group: 2 }, { id: "Esprit d'entreprendre", group: 2 },
-                { id: "Sens du Collectif", group: 2 }, { id: "Capacité de synthèse", group: 2 },
-                { id: "Adaptabilité", group: 2 }, { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
-                // Groupe 3 : Intérêts
-                { id: "Centres d'intérêt", group: 3, level: 2 },
-                { id: "Programmation informatique", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
-                { id: "DIY / électronique", group: 3 }, { id: "Réparation / Réemploi", group: 3 },
-                // Groupe 4 : Langue
-                { id: "Langues", group: 4, level: 2 },
-                { id: "Anglais (Professionnel)", group: 4 }
+                { id: "Créativité", group: 2 }, { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
+                // Intérêts
+                { id: "Programmation", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
+                { id: "DIY / Électronique", group: 3 }, { id: "Anglais (Pro)", group: 4 }
             ],
             links: [
-                { source: "MOI", target: "Compétences Techniques" },
-                { source: "MOI", target: "Soft Skills" },
-                { source: "MOI", target: "Centres d'intérêt" },
-                { source: "MOI", target: "Langues" },
-                // Liens Techniques
-                { source: "Compétences Techniques", target: "Amélioration continue" },
+                { source: "PROFIL", target: "Techniques" },
+                { source: "PROFIL", target: "Soft Skills" },
+                { source: "PROFIL", target: "Intérêts" },
+                { source: "Techniques", target: "Amélioration continue" },
                 { source: "Amélioration continue", target: "Lean" },
                 { source: "Lean", target: "5S" }, { source: "Lean", target: "Kaizen" },
-                { source: "Compétences Techniques", target: "Gestion de projet industriel" },
-                { source: "Gestion de projet industriel", target: "Power BI" },
-                { source: "Gestion de projet industriel", target: "SAP" },
-                // Soft skills
-                { source: "Soft Skills", target: "Leadership" },
-                { source: "Soft Skills", target: "Agilité" }
+                { source: "Techniques", target: "Gestion de projet" },
+                { source: "Gestion de projet", target: "Power BI" },
+                { source: "Soft Skills", target: "Leadership" }
             ]
         };
 
         const Graph = ForceGraph3D()(document.getElementById('3d-graph'))
             .graphData(gData)
             .nodeAutoColorBy('group')
-            .backgroundColor('rgba(0,0,0,0)') // Fond transparent pour voir le dégradé CSS
-            .linkWidth(0.5)
-            .linkOpacity(0.2)
-            // Désactiver les sphères pour ne laisser que le texte
+            .backgroundColor('#000000')
+            .showNavInfo(false)
+            // On remplace la sphère par le texte
             .nodeThreeObject(node => {
                 const sprite = new SpriteText(node.id);
                 sprite.color = node.color;
-                sprite.textHeight = node.level === 1 ? 10 : (node.level === 2 ? 7 : 4);
+                sprite.textHeight = node.size ? node.size : 4;
                 sprite.fontWeight = 'bold';
-                sprite.padding = 2;
                 return sprite;
             })
-            // Interaction mobile : zoom au clic
+            // Interaction mobile : zoom fluide au clic
             .onNodeClick(node => {
                 const distance = 80;
                 const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
@@ -101,8 +85,8 @@
                 );
             });
 
-        // Ajustement des forces pour l'espacement
-        Graph.d3Force('charge').strength(-150);
+        // Force d'espacement pour éviter que les mots se chevauchent
+        Graph.d3Force('charge').strength(-180);
     </script>
 </body>
 </html>
