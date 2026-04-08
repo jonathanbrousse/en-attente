@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Graphe 3D de Compétences</title>
+  <style>
+    body { margin: 0; background-color: #111; overflow: hidden; font-family: sans-serif; }
+    #info { position: absolute; top: 10px; left: 10px; color: white; z-index: 10; pointer-events: none; }
+  </style>
+  <!-- Chargement des bibliothèques 3D et de texte -->
+  <script src="https://unpkg.com/three"></script>
+  <script src="https://unpkg.com/three-spritetext"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+</head>
+<body>
+  <div id="info"><h1>Mon Réseau de Compétences</h1><p>Cliquez, glissez et zoomez pour explorer !</p></div>
+  <div id="3d-graph"></div>
+
+  <script>
+    // TES DONNÉES STRUCTURÉES
+    const gData = {
+      nodes: [
+        // Centre
+        { id: "MON PROFIL", group: 0 },
+        
+        // Catégories principales
+        { id: "Compétences Techniques", group: 1 },
+        { id: "Soft Skills", group: 2 },
+        { id: "Centres d'intérêt", group: 3 },
+        { id: "Langues", group: 4 },
+
+        // Compétences (Group 1)
+        { id: "Amélioration continue", group: 1 },
+        { id: "Transfert industriel", group: 1 },
+        { id: "Gestion de projet", group: 1 },
+        { id: "Industrialisation", group: 1 },
+        { id: "Méthodes / Procédés", group: 1 },
+        { id: "Management d’équipe", group: 1 },
+        { id: "Conduite du changement", group: 1 },
+        { id: "Lean", group: 1 },
+        { id: "5S", group: 1 },
+        { id: "Kaizen", group: 1 },
+        { id: "VSM", group: 1 },
+        { id: "AMDEC", group: 1 },
+        { id: "SAP", group: 1 },
+        { id: "Excel", group: 1 },
+        { id: "Power BI", group: 1 },
+        { id: "MS Project", group: 1 },
+
+        // Soft Skills (Group 2)
+        { id: "Résolution de problèmes", group: 2 },
+        { id: "Intelligence émotionnelle", group: 2 },
+        { id: "Créativité", group: 2 },
+        { id: "Esprit d'entreprendre", group: 2 },
+        { id: "Sens du Collectif", group: 2 },
+        { id: "Capacité de synthèse", group: 2 },
+        { id: "Esprit d'innovation", group: 2 },
+        { id: "Sens de l'organisation", group: 2 },
+        { id: "Pragmatisme", group: 2 },
+        { id: "Adaptabilité", group: 2 },
+        { id: "Agilité", group: 2 },
+        { id: "Leadership", group: 2 },
+
+        // Centres d'intérêt (Group 3)
+        { id: "Programmation", group: 3 },
+        { id: "Apprentissage autodidacte", group: 3 },
+        { id: "DIY / Électronique", group: 3 },
+        { id: "Réparation / Réemploi", group: 3 },
+
+        // Langues (Group 4)
+        { id: "Anglais (Pro)", group: 4 }
+      ],
+      links: [
+        // Liens du profil vers les catégories
+        { source: "MON PROFIL", target: "Compétences Techniques" },
+        { source: "MON PROFIL", target: "Soft Skills" },
+        { source: "MON PROFIL", target: "Centres d'intérêt" },
+        { source: "MON PROFIL", target: "Langues" },
+
+        // Liens Compétences Techniques
+        { source: "Compétences Techniques", target: "Amélioration continue" },
+        { source: "Compétences Techniques", target: "Transfert industriel" },
+        { source: "Compétences Techniques", target: "Gestion de projet" },
+        { source: "Compétences Techniques", target: "Industrialisation" },
+        { source: "Compétences Techniques", target: "Méthodes / Procédés" },
+        { source: "Compétences Techniques", target: "Management d’équipe" },
+        { source: "Compétences Techniques", target: "Conduite du changement" },
+        { source: "Amélioration continue", target: "Lean" },
+        { source: "Amélioration continue", target: "5S" },
+        { source: "Amélioration continue", target: "Kaizen" },
+        { source: "Amélioration continue", target: "VSM" },
+        { source: "Méthodes / Procédés", target: "AMDEC" },
+        { source: "Gestion de projet", target: "MS Project" },
+        { source: "Gestion de projet", target: "Excel" },
+        { source: "Gestion de projet", target: "Power BI" },
+        { source: "Gestion de projet", target: "SAP" },
+
+        // Liens Soft Skills
+        { source: "Soft Skills", target: "Résolution de problèmes" },
+        { source: "Soft Skills", target: "Intelligence émotionnelle" },
+        { source: "Soft Skills", target: "Créativité" },
+        { source: "Soft Skills", target: "Esprit d'entreprendre" },
+        { source: "Soft Skills", target: "Sens du Collectif" },
+        { source: "Soft Skills", target: "Capacité de synthèse" },
+        { source: "Soft Skills", target: "Esprit d'innovation" },
+        { source: "Soft Skills", target: "Sens de l'organisation" },
+        { source: "Soft Skills", target: "Pragmatisme" },
+        { source: "Soft Skills", target: "Adaptabilité" },
+        { source: "Soft Skills", target: "Agilité" },
+        { source: "Soft Skills", target: "Leadership" },
+
+        // Liens Intérêts
+        { source: "Centres d'intérêt", target: "Programmation" },
+        { source: "Centres d'intérêt", target: "Apprentissage autodidacte" },
+        { source: "Centres d'intérêt", target: "DIY / Électronique" },
+        { source: "Centres d'intérêt", target: "Réparation / Réemploi" },
+
+        // Liens Langues
+        { source: "Langues", target: "Anglais (Pro)" }
+      ]
+    };
+
+    // GÉNÉRATION DU GRAPHE 3D
+    const Graph = ForceGraph3D()
+      (document.getElementById('3d-graph'))
+        .graphData(gData)
+        .nodeAutoColorBy('group')
+        .linkWidth(1)
+        .linkOpacity(0.5)
+        .nodeThreeObject(node => {
+          // Utilisation du texte à la place des sphères
+          const sprite = new SpriteText(node.id);
+          sprite.color = node.color;
+          // Le nœud central est plus gros
+          sprite.textHeight = node.id === "MON PROFIL" ? 14 : (node.group === 0 ? 10 : 6);
+          sprite.fontWeight = 'bold';
+          return sprite;
+        });
+
+    // Écarter un peu les mots pour que ce soit lisible
+    Graph.d3Force('charge').strength(-300);
+  </script>
+</body>
+</html>
