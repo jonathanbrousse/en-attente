@@ -1,92 +1,84 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Réseau de Compétences 3D</title>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        #title { 
-            position: absolute; top: 20px; left: 20px; color: #00d4ff; 
-            z-index: 10; pointer-events: none; 
-        }
-        #title h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Portfolio 3D - Compétences</title>
+  <style>
+    body { margin: 0; background-color: #000; overflow: hidden; font-family: sans-serif; }
+    #title { position: absolute; top: 20px; left: 20px; color: #00d4ff; z-index: 10; pointer-events: none; }
+  </style>
+  <script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
 </head>
 <body>
 
-    <div id="title">
-        <h1>Compétences Industrielles</h1>
-        <small style="color: #666;">Cliquez sur un mot pour zoomer</small>
-    </div>
-    <div id="3d-graph"></div>
+  <div id="title">
+    <h1>Mes Compétences</h1>
+    <p>Utilisez la souris pour naviguer dans la galaxie</p>
+  </div>
+  <div id="3d-graph"></div>
 
-    <script type="module">
-        // On importe tout via esm.sh qui gère les dépendances (comme DragControls) tout seul
-        import ForceGraph3D from 'https://esm.sh/3d-force-graph';
-        import SpriteText from 'https://esm.sh/three-spritetext';
+  <script>
+    // Tes données nettoyées
+    const gData = {
+      nodes: [
+        { id: "MOI", group: 0 },
+        // Groupe 1 : Industriel
+        { id: "Amélioration continue", group: 1 }, { id: "Transfert industriel", group: 1 },
+        { id: "Gestion de projet", group: 1 }, { id: "Industrialisation", group: 1 },
+        { id: "Méthodes / procédés", group: 1 }, { id: "Management d’équipe", group: 1 },
+        { id: "Lean", group: 1 }, { id: "5S", group: 1 }, { id: "Kaizen", group: 1 },
+        { id: "VSM", group: 1 }, { id: "AMDEC", group: 1 }, { id: "SAP", group: 1 },
+        { id: "Excel", group: 1 }, { id: "Power BI", group: 1 }, { id: "MS Project", group: 1 },
+        // Groupe 2 : Soft Skills
+        { id: "Résolution de problèmes", group: 2 }, { id: "Intelligence émotionnelle", group: 2 },
+        { id: "Créativité", group: 2 }, { id: "Esprit d'entreprendre", group: 2 },
+        { id: "Sens du Collectif", group: 2 }, { id: "Capacité de synthèse", group: 2 },
+        { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
+        // Groupe 3 : Intérêts
+        { id: "Programmation", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
+        { id: "DIY", group: 3 }, { id: "Réparation", group: 3 },
+        // Groupe 4 : Langue
+        { id: "Anglais (Pro)", group: 4 }
+      ],
+      links: [
+        { source: "MOI", target: "Amélioration continue" },
+        { source: "MOI", target: "Gestion de projet" },
+        { source: "MOI", target: "Management d’équipe" },
+        { source: "Amélioration continue", target: "Lean" },
+        { source: "Lean", target: "5S" },
+        { source: "Lean", target: "Kaizen" },
+        { source: "Lean", target: "VSM" },
+        { source: "Gestion de projet", target: "MS Project" },
+        { source: "Gestion de projet", target: "Power BI" },
+        { source: "MOI", target: "Résolution de problèmes" },
+        { source: "MOI", target: "Agilité" },
+        { source: "MOI", target: "Anglais (Pro)" },
+        { source: "MOI", target: "Programmation" }
+      ]
+    };
 
-        const gData = {
-            nodes: [
-                { id: "PROFIL", group: 0, size: 10 },
-                // Catégories
-                { id: "Techniques", group: 1, size: 8 },
-                { id: "Soft Skills", group: 2, size: 8 },
-                { id: "Intérêts", group: 3, size: 8 },
-                // Compétences Techniques
-                { id: "Amélioration continue", group: 1 }, { id: "Lean", group: 1 },
-                { id: "5S", group: 1 }, { id: "Kaizen", group: 1 }, { id: "VSM", group: 1 },
-                { id: "Transfert industriel", group: 1 }, { id: "Gestion de projet", group: 1 },
-                { id: "Industrialisation", group: 1 }, { id: "Méthodes / procédés", group: 1 },
-                { id: "Management d’équipe", group: 1 }, { id: "AMDEC", group: 1 },
-                { id: "SAP", group: 1 }, { id: "Excel", group: 1 }, { id: "Power BI", group: 1 },
-                { id: "MS Project", group: 1 },
-                // Soft Skills
-                { id: "Résolution de problèmes", group: 2 }, { id: "Intelligence émotionnelle", group: 2 },
-                { id: "Créativité", group: 2 }, { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
-                // Intérêts
-                { id: "Programmation", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
-                { id: "DIY / Électronique", group: 3 }, { id: "Anglais (Pro)", group: 4 }
-            ],
-            links: [
-                { source: "PROFIL", target: "Techniques" },
-                { source: "PROFIL", target: "Soft Skills" },
-                { source: "PROFIL", target: "Intérêts" },
-                { source: "Techniques", target: "Amélioration continue" },
-                { source: "Amélioration continue", target: "Lean" },
-                { source: "Lean", target: "5S" }, { source: "Lean", target: "Kaizen" },
-                { source: "Techniques", target: "Gestion de projet" },
-                { source: "Gestion de projet", target: "Power BI" },
-                { source: "Soft Skills", target: "Leadership" }
-            ]
-        };
+    const Graph = ForceGraph3D()
+      (document.getElementById('3d-graph'))
+        .graphData(gData)
+        .backgroundColor('#000000')
+        .nodeAutoColorBy('group')
+        .nodeLabel('id') // Affiche le nom quand on passe la souris
+        .linkDirectionalParticles(2) // Petits points qui bougent sur les liens
+        .linkDirectionalParticleSpeed(0.005)
+        .linkWidth(1.5)
+        .onNodeClick(node => {
+          // Zoom sur le nœud au clic
+          const distance = 40;
+          const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+          Graph.cameraPosition(
+            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
+            node, 
+            3000
+          );
+        });
 
-        const Graph = ForceGraph3D()(document.getElementById('3d-graph'))
-            .graphData(gData)
-            .nodeAutoColorBy('group')
-            .backgroundColor('#000000')
-            .showNavInfo(false)
-            // On remplace la sphère par le texte
-            .nodeThreeObject(node => {
-                const sprite = new SpriteText(node.id);
-                sprite.color = node.color;
-                sprite.textHeight = node.size ? node.size : 4;
-                sprite.fontWeight = 'bold';
-                return sprite;
-            })
-            // Interaction mobile : zoom fluide au clic
-            .onNodeClick(node => {
-                const distance = 80;
-                const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
-                Graph.cameraPosition(
-                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
-                    node, 
-                    2000
-                );
-            });
-
-        // Force d'espacement pour éviter que les mots se chevauchent
-        Graph.d3Force('charge').strength(-180);
-    </script>
+    // Écarte les éléments pour une meilleure lisibilité
+    Graph.d3Force('charge').strength(-150);
+  </script>
 </body>
 </html>
