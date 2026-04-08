@@ -1,141 +1,108 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galaxy de Compétences Industrielles</title>
-  <style>
-    body { margin: 0; background-color: #000; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    #title { position: absolute; top: 15px; left: 15px; color: #00d4ff; z-index: 10; pointer-events: none; text-shadow: 0 0 5px rgba(0,212,255,0.7); }
-    #title h1 { margin: 0; font-size: 20px; }
-    #title p { margin: 5px 0 0; font-size: 12px; color: #ccc; }
-    /* Style pour le label au survol sur mobile */
-    .graph-tooltip { color: black !important; background: rgba(255,255,255,0.9) !important; border-radius: 4px; padding: 4px 8px; font-size: 14px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Compétences 3D</title>
+    <style>
+        body { margin: 0; background: radial-gradient(circle, #1a1a1a 0%, #000000 100%); overflow: hidden; font-family: sans-serif; }
+        #title { position: absolute; top: 20px; left: 20px; color: #00d4ff; z-index: 10; pointer-events: none; }
+        #title h1 { margin: 0; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+    </style>
 
-  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three-spritetext@1.8.2/dist/three-spritetext.min.js"></script>
-  <script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three-spritetext": "https://unpkg.com/three-spritetext@1.8.2/dist/three-spritetext.mjs",
+            "3d-force-graph": "https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.mjs"
+        }
+    }
+    </script>
 </head>
 <body>
 
-  <div id="title">
-    <h1>Mes Compétences</h1>
-    <p>Touchez/Cliquez pour naviguer</p>
-  </div>
-  <div id="3d-graph"></div>
+    <div id="title">
+        <h1>Navigation Compétences</h1>
+        <small style="color: #888;">Pincez pour zoomer • Touchez pour déplacer</small>
+    </div>
+    <div id="3d-graph"></div>
 
-  <script>
-    // TES DONNÉES COMPLÈTES ET STRUCTURÉES
-    const gData = {
-      nodes: [
-        { id: "MOI", group: 0, type: 'central' },
-        // Groupe 1 : Industriel / Techniques
-        { id: "Compétences Techniques", group: 1, type: 'category' },
-        { id: "Amélioration continue", group: 1 }, { id: "Transfert industriel", group: 1 },
-        { id: "Gestion de projet industriel", group: 1 }, { id: "Industrialisation", group: 1 },
-        { id: "Méthodes / procédés", group: 1 }, { id: "Management d’équipe", group: 1 },
-        { id: "Conduite du changement", group: 1 }, { id: "Lean", group: 1 }, { id: "5S", group: 1 },
-        { id: "Kaizen", group: 1 }, { id: "VSM", group: 1 }, { id: "AMDEC", group: 1 },
-        { id: "SAP", group: 1 }, { id: "Excel", group: 1 }, { id: "Power BI", group: 1 },
-        { id: "MS Project", group: 1 },
-        // Groupe 2 : Soft Skills
-        { id: "Soft Skills", group: 2, type: 'category' },
-        { id: "Résolution de problèmes", group: 2 }, { id: "Intelligence émotionnelle", group: 2 },
-        { id: "Créativité", group: 2 }, { id: "Esprit d'entreprendre", group: 2 },
-        { id: "Sens du Collectif", group: 2 }, { id: "Capacité de synthèse", group: 2 },
-        { id: "Esprit d'innovation", group: 2 }, { id: "Sens de l'organisation", group: 2 },
-        { id: "Pragmatisme", group: 2 }, { id: "Adaptabilité", group: 2 },
-        { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
-        // Groupe 3 : Intérêts
-        { id: "Centres d'intérêt", group: 3, type: 'category' },
-        { id: "Programmation informatique", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
-        { id: "DIY / fabrication électronique", group: 3 }, { id: "Réparation / Réemploi", group: 3 },
-        // Groupe 4 : Langue
-        { id: "Langues", group: 4, type: 'category' },
-        { id: "Anglais (Professionnel)", group: 4 }
-      ],
-      links: [
-        // Liens centraux
-        { source: "MOI", target: "Compétences Techniques" },
-        { source: "MOI", target: "Soft Skills" },
-        { source: "MOI", target: "Centres d'intérêt" },
-        { source: "MOI", target: "Langues" },
-        // Liens Techniques
-        { source: "Compétences Techniques", target: "Amélioration continue" },
-        { source: "Amélioration continue", target: "Lean" },
-        { source: "Lean", target: "5S" }, { source: "Lean", target: "Kaizen" },
-        { source: "Lean", target: "VSM" }, { source: "Lean", target: "Conduite du changement" },
-        { source: "Compétences Techniques", target: "Méthodes / procédés" },
-        { source: "Méthodes / procédés", target: "AMDEC" },
-        { source: "Méthodes / procédés", target: "Industrialisation" },
-        { source: "Compétences Techniques", target: "Gestion de projet industriel" },
-        { source: "Gestion de projet industriel", target: "MS Project" },
-        { source: "Gestion de projet industriel", target: "Excel" },
-        { source: "Gestion de projet industriel", target: "Power BI" },
-        { source: "Gestion de projet industriel", target: "SAP" },
-        { source: "Compétences Techniques", target: "Management d’équipe" },
-        { source: "Compétences Techniques", target: "Transfert industriel" },
-        // Liens Soft Skills
-        { source: "Soft Skills", target: "Résolution de problèmes" },
-        { source: "Soft Skills", target: "Adaptabilité" }, { source: "Adaptabilité", target: "Agilité" },
-        { source: "Soft Skills", target: "Leadership" },
-        // Liens Intérêts
-        { source: "Centres d'intérêt", target: "Programmation informatique" },
-        { source: "Centres d'intérêt", target: "DIY / fabrication électronique" },
-        // Liens Langue
-        { source: "Langues", target: "Anglais (Professionnel)" }
-      ]
-    };
+    <script type="module">
+        import ForceGraph3D from '3d-force-graph';
+        import SpriteText from 'three-spritetext';
 
-    // CONFIGURATION DU GRAPHE
-    const Graph = ForceGraph3D()
-      (document.getElementById('3d-graph'))
-        .graphData(gData)
-        .backgroundColor('#000000') // Fond noir
-        .nodeAutoColorBy('group')   // Une couleur par groupe
-        .linkOpacity(0.3)          // Liens discrets
-        .linkWidth(1)
-        
-        // --- LA PARTIE IMPORTANTE : REMPLACER LES SPHÈRES PAR DU TEXTE ---
-        .nodeThreeObject(node => {
-          // 'SpriteText' vient de la bibliothèque chargée en n°2
-          const sprite = new SpriteText(node.id);
-          sprite.color = node.color; // Utilise la couleur automatique du groupe
-          
-          // Ajustement de la taille du texte selon l'importance
-          if (node.type === 'central') {
-            sprite.textHeight = 12; // Très gros pour 'MOI'
-            sprite.fontWeight = 'bold';
-          } else if (node.type === 'category') {
-            sprite.textHeight = 8;  // Gros pour les catégories
-            sprite.fontWeight = 'bold';
-          } else {
-            sprite.textHeight = 5;  // Taille normale pour les compétences
-          }
-          
-          return sprite;
-        })
-        // ----------------------------------------------------------------
+        const gData = {
+            nodes: [
+                { id: "MOI", group: 0, level: 1 },
+                // Groupe 1 : Industriel
+                { id: "Compétences Techniques", group: 1, level: 2 },
+                { id: "Amélioration continue", group: 1 }, { id: "Transfert industriel", group: 1 },
+                { id: "Gestion de projet industriel", group: 1 }, { id: "Industrialisation", group: 1 },
+                { id: "Méthodes / procédés", group: 1 }, { id: "Management d’équipe", group: 1 },
+                { id: "Lean", group: 1 }, { id: "5S", group: 1 }, { id: "Kaizen", group: 1 },
+                { id: "VSM", group: 1 }, { id: "AMDEC", group: 1 }, { id: "SAP", group: 1 },
+                { id: "Excel", group: 1 }, { id: "Power BI", group: 1 }, { id: "MS Project", group: 1 },
+                // Groupe 2 : Soft Skills
+                { id: "Soft Skills", group: 2, level: 2 },
+                { id: "Résolution de problèmes", group: 2 }, { id: "Intelligence émotionnelle", group: 2 },
+                { id: "Créativité", group: 2 }, { id: "Esprit d'entreprendre", group: 2 },
+                { id: "Sens du Collectif", group: 2 }, { id: "Capacité de synthèse", group: 2 },
+                { id: "Adaptabilité", group: 2 }, { id: "Agilité", group: 2 }, { id: "Leadership", group: 2 },
+                // Groupe 3 : Intérêts
+                { id: "Centres d'intérêt", group: 3, level: 2 },
+                { id: "Programmation informatique", group: 3 }, { id: "Apprentissage autodidacte", group: 3 },
+                { id: "DIY / électronique", group: 3 }, { id: "Réparation / Réemploi", group: 3 },
+                // Groupe 4 : Langue
+                { id: "Langues", group: 4, level: 2 },
+                { id: "Anglais (Professionnel)", group: 4 }
+            ],
+            links: [
+                { source: "MOI", target: "Compétences Techniques" },
+                { source: "MOI", target: "Soft Skills" },
+                { source: "MOI", target: "Centres d'intérêt" },
+                { source: "MOI", target: "Langues" },
+                // Liens Techniques
+                { source: "Compétences Techniques", target: "Amélioration continue" },
+                { source: "Amélioration continue", target: "Lean" },
+                { source: "Lean", target: "5S" }, { source: "Lean", target: "Kaizen" },
+                { source: "Compétences Techniques", target: "Gestion de projet industriel" },
+                { source: "Gestion de projet industriel", target: "Power BI" },
+                { source: "Gestion de projet industriel", target: "SAP" },
+                // Soft skills
+                { source: "Soft Skills", target: "Leadership" },
+                { source: "Soft Skills", target: "Agilité" }
+            ]
+        };
 
-        // Optimisation Mobile : Afficher le texte au survol/toucher
-        .nodeLabel('id') 
-        
-        // Interaction au clic
-        .onNodeClick(node => {
-          // Zoom doucement sur le mot cliqué
-          const distance = 60;
-          const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
-          Graph.cameraPosition(
-            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
-            node, 
-            3000 // durée de la transition (ms)
-          );
-        });
+        const Graph = ForceGraph3D()(document.getElementById('3d-graph'))
+            .graphData(gData)
+            .nodeAutoColorBy('group')
+            .backgroundColor('rgba(0,0,0,0)') // Fond transparent pour voir le dégradé CSS
+            .linkWidth(0.5)
+            .linkOpacity(0.2)
+            // Désactiver les sphères pour ne laisser que le texte
+            .nodeThreeObject(node => {
+                const sprite = new SpriteText(node.id);
+                sprite.color = node.color;
+                sprite.textHeight = node.level === 1 ? 10 : (node.level === 2 ? 7 : 4);
+                sprite.fontWeight = 'bold';
+                sprite.padding = 2;
+                return sprite;
+            })
+            // Interaction mobile : zoom au clic
+            .onNodeClick(node => {
+                const distance = 80;
+                const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+                Graph.cameraPosition(
+                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
+                    node, 
+                    2000
+                );
+            });
 
-    // Configuration des forces d'écrasement (pour éviter le chevauchement)
-    Graph.d3Force('charge').strength(-250); // Répulsion forte
-    Graph.d3Force('link').distance(50);      // Longueur des liens
-  </script>
+        // Ajustement des forces pour l'espacement
+        Graph.d3Force('charge').strength(-150);
+    </script>
 </body>
 </html>
