@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galaxy de Compétences Industrielles</title>
+  <style>
+    body { margin: 0; background-color: #242222; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    #title { position: absolute; top: 15px; left: 15px; color: #00d4ff; z-index: 10; pointer-events: none; text-shadow: 0 0 5px rgba(0,212,255,0.7); }
+    #title h1 { margin: 0; font-size: 20px; }
+    #title p { margin: 5px 0 0; font-size: 12px; color: #ccc; }
+    /* Style pour le label au survol sur mobile */
+    .graph-tooltip { color: black !important; background: rgba(252, 252, 252, 0.9) !important; border-radius: 4px; padding: 4px 8px; font-size: 14px; }
+  </style>
+
+  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three-spritetext@1.8.2/dist/three-spritetext.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
+</head>
+<body>
+
+  <div id="title">
+    <h1>Mes Compétences</h1>
+    <p>Touchez/Cliquez pour naviguer</p>
+  </div>
+  <div id="3d-graph"></div>
+
+   // DONNÉES IMPORTÉES DE data.js   
+    <script src="data.js"></script>
+    <script>
+
+    // CONFIGURATION DU GRAPHE
+    const Graph = ForceGraph3D()
+      (document.getElementById('3d-graph'))
+        .graphData(myData)
+        .backgroundColor('#000000') // Fond noir
+        .nodeAutoColorBy('group')   // Une couleur par groupe
+        .linkOpacity(0.3)          // Liens discrets
+        .linkWidth(1)
+        
+        // --- LA PARTIE IMPORTANTE : REMPLACER LES SPHÈRES PAR DU TEXTE ---
+        .nodeThreeObject(node => {
+          // 'SpriteText' vient de la bibliothèque chargée en n°2
+          const sprite = new SpriteText(node.id);
+          sprite.color = node.color; // Utilise la couleur automatique du groupe
+          
+          // Ajustement de la taille du texte selon l'importance
+          if (node.type === 'central') {
+            sprite.textHeight = 14; // Très gros pour 'MOI'
+            sprite.fontWeight = 'bold';
+          } else if (node.type === 'category') {
+            sprite.textHeight = 10;  // Gros pour les catégories
+            sprite.fontWeight = 'bold';
+          } else {
+            sprite.textHeight = 8;  // Taille normale pour les compétences
+          }
+          
+          return sprite;
+        })
+        // ----------------------------------------------------------------
+
+        // Optimisation Mobile : Afficher le texte au survol/toucher
+        .nodeLabel('id') 
+        
+        // Interaction au clic
+        .onNodeClick(node => {
+          // Zoom doucement sur le mot cliqué
+          const distance = 40;
+          const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+          Graph.cameraPosition(
+            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
+            node, 
+            3000 // durée de la transition (ms)
+          );
+        });
+
+    // Configuration des forces d'écrasement (pour éviter le chevauchement)
+    Graph.d3Force('charge').strength(-250); // Répulsion forte
+    Graph.d3Force('link').distance(30);      // Longueur des liens
+  </script>
+</body>
+</html>

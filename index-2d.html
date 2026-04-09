@@ -17,27 +17,15 @@
 
   <div id="title">
     <h1>Mes Compétences</h1>
-    <p>Molette/Pincer pour zoomer • Glisser pour déplacer</p>
+    <p>Molette pour zoomer • Maintenir le clic pour déplacer</p>
   </div>
   
   <div id="graph"></div>
 
-  <script src="data.js"></script>
-  
-  <script>
-    // ==========================================
-    // 1. DÉTECTION MOBILE OU PC
-    // ==========================================
-    // Si l'écran fait moins de 768px de large, on le considère comme un mobile
-    const isMobile = window.innerWidth < 768;
-
-    // Réglages dynamiques selon l'appareil
-    const config = {
-      charge: isMobile ? -30 : -70,       // Répulsion plus faible sur mobile pour regrouper
-      linkDistance: isMobile ? 30 : 80,   // Liens plus courts sur mobile
-      collision: isMobile ? 8 : 15,       // Rayon de collision plus petit sur mobile
-      fontMultiplier: isMobile ? 0.7 : 1  // Textes 30% plus petits sur mobile
-    };
+        // DONNÉES IMPORTÉES DE data.js   
+    <script src="data.js"></script>
+    <script>
+     
 
     // ==========================================
     // 2. CONFIGURATION DU MOTEUR DU GRAPHE 2D
@@ -47,7 +35,7 @@
         .graphData(myData)
         .backgroundColor('#242222')
         .nodeAutoColorBy('group')
-        .linkDirectionalParticles(2)
+        .linkDirectionalParticles(2) // Particules animées sur les liens
         .linkDirectionalParticleSpeed(0.005)
         .linkColor(() => 'rgba(255,255,255,0.2)')
         
@@ -55,13 +43,11 @@
         .nodeCanvasObject((node, ctx, globalScale) => {
           const label = node.id;
           
-          // Tailles dynamiques selon l'importance ET l'appareil (via fontMultiplier)
-          let baseSize = node.type === 'central' ? 16 : (node.type === 'category' ? 12 : 8);
-          const fontSize = baseSize * config.fontMultiplier;
-          
+          // Tailles dynamiques selon l'importance
+          const fontSize = node.type === 'central' ? 16 : (node.type === 'category' ? 12 : 8);
           ctx.font = `bold ${fontSize}px Sans-Serif`;
           
-          // Ajout d'un léger fond noir derrière le texte
+          // Ajout d'un léger fond noir derrière le texte pour la lisibilité
           const textWidth = ctx.measureText(label).width;
           const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); 
 
@@ -71,9 +57,10 @@
           // Dessin du texte
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = node.color;
+          ctx.fillStyle = node.color; // Couleur définie par le groupe
           ctx.fillText(label, node.x, node.y);
 
+          // Sauvegarde des dimensions pour la zone de clic
           node.__bckgDimensions = bckgDimensions; 
         })
         
@@ -86,24 +73,24 @@
           }
         })
         
-        // Comportement au clic : Zoomer
+        // Comportement au clic : Zoomer et centrer
         .onNodeClick(node => {
           Graph.centerAt(node.x, node.y, 1000);
-          Graph.zoom(isMobile ? 2 : 3, 2000); // Zoom un peu moins fort sur mobile
+          Graph.zoom(3, 2000);
         });
 
-    // ==========================================
-    // 3. APPLICATION DES FORCES (PC vs MOBILE)
-    // ==========================================
-    Graph.d3Force('charge').strength(config.charge);
-    Graph.d3Force('link').distance(config.linkDistance);
+    // Ajustement de la physique pour bien écarter le texte
+    Graph.d3Force('charge').strength(-70);
+    Graph.d3Force('link').distance(80);
+
+    // Forcer le graphe à rester au centre de l'écran (optionnel mais utile)
     Graph.d3Force('center', d3.forceCenter());
-    Graph.d3Force('collide', d3.forceCollide(config.collision));
+    // Empêche les nœuds de se chevaucher (rayon de collision de 15px)
+    Graph.d3Force('collide', d3.forceCollide(15));
 
     // Ajuster le zoom automatiquement pour tout voir au démarrage   
     Graph.onEngineStop(() => {
-      // Sur mobile, on laisse un peu moins de marge (20px au lieu de 50px) pour utiliser tout l'écran
-      Graph.zoomToFit(400, isMobile ? 20 : 50); 
+    Graph.zoomToFit(400, 50); // 400ms d'animation, 50px de marge
     });
 
   </script>
