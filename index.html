@@ -4,13 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Graphe de Compétences 2D</title>
+  
   <style>
     body { margin: 0; background-color: #242222; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
-    #title { position: absolute; top: 15px; left: 15px; color: #00d4ff; z-index: 10; pointer-events: none; }
+    
+    /* Le titre reste en haut à gauche */
+    #title { 
+      position: absolute; top: 15px; left: 15px; 
+      color: #00d4ff; z-index: 10; pointer-events: none; 
+    }
     #title h1 { margin: 0; font-size: 20px; text-shadow: 0 0 5px rgba(0,212,255,0.7); }
     #title p { margin: 5px 0 0; font-size: 12px; color: #ccc; }
+
+    /* Le contrôle est maintenant indépendant en bas à gauche */
+    #controls {
+      position: absolute; bottom: 20px; left: 20px;
+      z-index: 100; display: flex; align-items: center;
+      background: rgba(0,0,0,0.6); padding: 12px; border-radius: 8px;
+      border: 1px solid rgba(0,212,255,0.3);
+      pointer-events: all; /* CRUCIAL : autorise le clic */
+    }
+
+    #mode-label { color: white; margin-left: 10px; font-size: 14px; font-weight: bold; min-width: 140px; }
+
+    /* Style du Switch */
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #555; transition: .4s; border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px;
+      left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #00d4ff; }
+    input:checked + .slider:before { transform: translateX(20px); }
   </style>
 
+  <script src="https://unpkg.com/d3@7.8.5/dist/d3.min.js"></script>
   <script src="https://unpkg.com/force-graph@1.43.3/dist/force-graph.min.js"></script>
 </head>
 <body>
@@ -19,29 +51,29 @@
     <h1>Mes Compétences</h1>
     <p>Molette/Pincer pour zoomer • Glisser pour déplacer</p>
   </div>
+
+  <div id="controls">
+    <label class="switch">
+        <input type="checkbox" id="layout-toggle">
+        <span class="slider"></span>
+    </label>
+    <span id="mode-label">Mode : Libre</span>
+  </div>
   
   <div id="graph"></div>
 
   <script src="data.js"></script>
   
   <script>
-    // ==========================================
-    // 1. DÉTECTION MOBILE OU PC
-    // ==========================================
-    // Si l'écran fait moins de 768px de large, on le considère comme un mobile
     const isMobile = window.innerWidth < 768;
 
-    // Réglages dynamiques selon l'appareil
     const config = {
-      charge: isMobile ? -30 : -70,       // Répulsion plus faible sur mobile pour regrouper
-      linkDistance: isMobile ? 30 : 80,   // Liens plus courts sur mobile
-      collision: isMobile ? 8 : 15,       // Rayon de collision plus petit sur mobile
-      fontMultiplier: isMobile ? 0.9 : 1  // Textes 30% plus petits sur mobile
+      charge: isMobile ? -30 : -70,
+      linkDistance: isMobile ? 30 : 80,
+      collision: isMobile ? 10 : 18,
+      fontMultiplier: isMobile ? 0.9 : 1
     };
 
-    // ==========================================
-    // 2. CONFIGURATION DU MOTEUR DU GRAPHE 2D
-    // ==========================================
     const Graph = ForceGraph()
       (document.getElementById('graph'))
         .graphData(myData)
@@ -49,35 +81,24 @@
         .nodeAutoColorBy('group')
         .linkDirectionalParticles(2)
         .linkDirectionalParticleSpeed(0.005)
-        .linkColor(() => 'rgba(255,255,255,0.2)')
-        
-        // Remplacement des points par du texte natif (Canvas 2D)
+        .linkColor(() => 'rgba(255,255,255,0.15)')
         .nodeCanvasObject((node, ctx, globalScale) => {
           const label = node.id;
-          
-          // Tailles dynamiques selon l'importance ET l'appareil (via fontMultiplier)
           let baseSize = node.type === 'central' ? 16 : (node.type === 'category' ? 12 : 8);
           const fontSize = baseSize * config.fontMultiplier;
-          
           ctx.font = `bold ${fontSize}px Sans-Serif`;
-          
-          // Ajout d'un léger fond noir derrière le texte
           const textWidth = ctx.measureText(label).width;
           const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); 
 
           ctx.fillStyle = 'rgba(36, 34, 34, 0.8)';
           ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
 
-          // Dessin du texte
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = node.color;
           ctx.fillText(label, node.x, node.y);
-
           node.__bckgDimensions = bckgDimensions; 
         })
-        
-        // Définir la zone réactive au clic autour du texte
         .nodePointerAreaPaint((node, color, ctx) => {
           ctx.fillStyle = color;
           const bckgDimensions = node.__bckgDimensions;
@@ -85,27 +106,92 @@
             ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
           }
         })
-        
-        // Comportement au clic : Zoomer
         .onNodeClick(node => {
           Graph.centerAt(node.x, node.y, 1000);
-          Graph.zoom(isMobile ? 2 : 3, 2000); // Zoom un peu moins fort sur mobile
+          Graph.zoom(isMobile ? 2.5 : 3, 2000);
         });
 
-    // ==========================================
-    // 3. APPLICATION DES FORCES (PC vs MOBILE)
-    // ==========================================
+    // Forces par défaut
     Graph.d3Force('charge').strength(config.charge);
     Graph.d3Force('link').distance(config.linkDistance);
     Graph.d3Force('center', d3.forceCenter());
     Graph.d3Force('collide', d3.forceCollide(config.collision));
 
-    // Ajuster le zoom automatiquement pour tout voir au démarrage   
     Graph.onEngineStop(() => {
-      // Sur mobile, on laisse un peu moins de marge (20px au lieu de 50px) pour utiliser tout l'écran
       Graph.zoomToFit(400, isMobile ? 20 : 50); 
     });
 
+    // --- LOGIQUE DU MODE MIND-MAP ---
+
+    const toggle = document.getElementById('layout-toggle');
+    const labelMode = document.getElementById('mode-label');
+
+    toggle.addEventListener('change', () => {
+        if (toggle.checked) {
+            labelMode.innerText = "Mode : Professionnel";
+            applyProfessionalLayout();
+        } else {
+            labelMode.innerText = "Mode : Libre";
+            applyFreeLayout();
+        }
+    });
+
+   // --- LOGIQUE DU MODE MIND-MAP (VERSION COLONNES EXCEL) ---
+
+function applyProfessionalLayout() {
+    // 1. On définit l'écartement des colonnes et des lignes
+    const colWidth = isMobile ? 120 : 180; // Plus serré sur mobile
+    const rowHeight = 25;
+
+    // 2. On prépare un compteur pour chaque groupe pour les empiler verticalement
+    const counters = {};
+
+    // 3. On "fixe" la position de chaque nœud (fx et fy bloquent la force)
+    myData.nodes.forEach(node => {
+        // Initialiser le compteur du groupe s'il n'existe pas
+        if (counters[node.group] === undefined) counters[node.group] = 0;
+
+        // Position X basée sur le groupe (Colonne)
+        // On décale pour que le groupe 0 (MOI) soit au centre ou en haut
+        node.fx = (node.group - 2) * colWidth; 
+
+        // Position Y basée sur l'index dans le groupe (Ligne)
+        // On centre la colonne verticalement
+        node.fy = (counters[node.group] * rowHeight) - 100;
+
+        counters[node.group]++;
+    });
+
+    // Cas particulier pour le nœud "MOI" (Groupe 0) : on le met tout en haut au centre
+    const root = myData.nodes.find(n => n.id === "MOI");
+    if (root) {
+        root.fx = 0;
+        root.fy = -200;
+    }
+
+    // Désactiver les liens et les particules pour un look plus "Tableau"
+    Graph.linkDirectionalParticles(0);
+    Graph.alphaTarget(0.3).restart();
+    
+    // Zoom pour cadrer le tableau
+    setTimeout(() => Graph.zoomToFit(800, 50), 200);
+}
+
+function applyFreeLayout() {
+    // On "libère" les positions fixées en mettant fx et fy à null
+    myData.nodes.forEach(node => {
+        node.fx = null;
+        node.fy = null;
+    });
+
+    // On remet les forces et les animations
+    Graph.linkDirectionalParticles(2);
+    Graph.d3Force('charge').strength(config.charge);
+    Graph.d3Force('link').distance(config.linkDistance);
+    
+    Graph.alphaTarget(0.3).restart();
+    setTimeout(() => Graph.alphaTarget(0), 1000);
+}
   </script>
 </body>
 </html>

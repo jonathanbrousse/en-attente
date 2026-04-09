@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graphe de Compétences 2D</title>
+  <style>
+    body { margin: 0; background-color: #242222; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+    #title { position: absolute; top: 15px; left: 15px; color: #00d4ff; z-index: 10; pointer-events: none; }
+    #title h1 { margin: 0; font-size: 20px; text-shadow: 0 0 5px rgba(0,212,255,0.7); }
+    #title p { margin: 5px 0 0; font-size: 12px; color: #ccc; }
+  </style>
+
+  <script src="https://unpkg.com/force-graph@1.43.3/dist/force-graph.min.js"></script>
+</head>
+<body>
+
+  <div id="title">
+    <h1>Mes Compétences</h1>
+    <p>Molette/Pincer pour zoomer • Glisser pour déplacer</p>
+  </div>
+  
+  <div id="graph"></div>
+
+  <script src="data.js"></script>
+  
+  <script>
+    // ==========================================
+    // 1. DÉTECTION MOBILE OU PC
+    // ==========================================
+    // Si l'écran fait moins de 768px de large, on le considère comme un mobile
+    const isMobile = window.innerWidth < 768;
+
+    // Réglages dynamiques selon l'appareil
+    const config = {
+      charge: isMobile ? -30 : -70,       // Répulsion plus faible sur mobile pour regrouper
+      linkDistance: isMobile ? 30 : 80,   // Liens plus courts sur mobile
+      collision: isMobile ? 8 : 15,       // Rayon de collision plus petit sur mobile
+      fontMultiplier: isMobile ? 0.9 : 1  // Textes 30% plus petits sur mobile
+    };
+
+    // ==========================================
+    // 2. CONFIGURATION DU MOTEUR DU GRAPHE 2D
+    // ==========================================
+    const Graph = ForceGraph()
+      (document.getElementById('graph'))
+        .graphData(myData)
+        .backgroundColor('#242222')
+        .nodeAutoColorBy('group')
+        .linkDirectionalParticles(2)
+        .linkDirectionalParticleSpeed(0.005)
+        .linkColor(() => 'rgba(255,255,255,0.2)')
+        
+        // Remplacement des points par du texte natif (Canvas 2D)
+        .nodeCanvasObject((node, ctx, globalScale) => {
+          const label = node.id;
+          
+          // Tailles dynamiques selon l'importance ET l'appareil (via fontMultiplier)
+          let baseSize = node.type === 'central' ? 16 : (node.type === 'category' ? 12 : 8);
+          const fontSize = baseSize * config.fontMultiplier;
+          
+          ctx.font = `bold ${fontSize}px Sans-Serif`;
+          
+          // Ajout d'un léger fond noir derrière le texte
+          const textWidth = ctx.measureText(label).width;
+          const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4); 
+
+          ctx.fillStyle = 'rgba(36, 34, 34, 0.8)';
+          ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
+
+          // Dessin du texte
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = node.color;
+          ctx.fillText(label, node.x, node.y);
+
+          node.__bckgDimensions = bckgDimensions; 
+        })
+        
+        // Définir la zone réactive au clic autour du texte
+        .nodePointerAreaPaint((node, color, ctx) => {
+          ctx.fillStyle = color;
+          const bckgDimensions = node.__bckgDimensions;
+          if (bckgDimensions) {
+            ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, bckgDimensions[0], bckgDimensions[1]);
+          }
+        })
+        
+        // Comportement au clic : Zoomer
+        .onNodeClick(node => {
+          Graph.centerAt(node.x, node.y, 1000);
+          Graph.zoom(isMobile ? 2 : 3, 2000); // Zoom un peu moins fort sur mobile
+        });
+
+    // ==========================================
+    // 3. APPLICATION DES FORCES (PC vs MOBILE)
+    // ==========================================
+    Graph.d3Force('charge').strength(config.charge);
+    Graph.d3Force('link').distance(config.linkDistance);
+    Graph.d3Force('center', d3.forceCenter());
+    Graph.d3Force('collide', d3.forceCollide(config.collision));
+
+    // Ajuster le zoom automatiquement pour tout voir au démarrage   
+    Graph.onEngineStop(() => {
+      // Sur mobile, on laisse un peu moins de marge (20px au lieu de 50px) pour utiliser tout l'écran
+      Graph.zoomToFit(400, isMobile ? 20 : 50); 
+    });
+
+  </script>
+</body>
+</html>
